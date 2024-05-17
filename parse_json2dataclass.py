@@ -11,13 +11,16 @@ import json as j
 
 def main():
     for arg in sys.argv[1:]:
-        (path, name) = arg.split(':')
+        if ':' in arg:
+            (path, name) = arg.split(':')
+        else:
+            path, name = arg, arg.rsplit('.', 1)[0]
         json = j.load(open(path, 'r'))
         dataclass_tb = json2dataclass(name, json)
 
         if not op.exists(name + '.py'):
             with open(name + '.py', 'w') as fd:
-                fd.write('from dataclasses import dataclass\n')
+                fd.write('from dataclasses import dataclass\nfrom typing import *\n')
                 for dataclass in dataclass_tb.values():
                     fd.write(dataclass)
                     fd.write('\n' * 4)

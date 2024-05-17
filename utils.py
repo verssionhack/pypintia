@@ -1,3 +1,6 @@
+import json as j
+
+
 def json2dataclass(name, data: dict) -> dict:
     table = {}
     dataclass_s = \
@@ -11,6 +14,7 @@ f'''\n    def __init__(self, data: dict):\n'''
 f"""\n        pass"""
     else:
         for k, v in data.items():
+            list_parse = False
             if type(v) == type(''):
                 dataclass_s += '    ' + pascal2snake(k) + ': str\n'
             elif type(v) == type(0):
@@ -23,14 +27,54 @@ f"""\n        pass"""
                 dataclass_s += '    ' + pascal2snake(k) + ': ' + snake2pascal(k) + '\n'
                 table.update(json2dataclass(k, v))
             elif type(v) == type([]):
-                dataclass_s += '    ' + pascal2snake(k) + ': list\n'
+                if len(v) == 0:
+                    dataclass_s += '    ' + pascal2snake(k) + ': list\n'
+                    continue
+                tp = type(v[0])
+                all_eq = True
+                for i in v:
+                    if type(i) != tp:
+                        all_eq = False
+                        break
+                if not all_eq:
+                    dataclass_s += '    ' + pascal2snake(k) + ': list\n'
+                elif tp == type({}):
+                    f_imp = str(json2dataclass('ArrayFirst', v[0]))
+                    all_eq = True
+                    for i in v:
+                        if f_imp != str(json2dataclass('ArrayFirst', i)):
+                            all_eq = False
+                            break
+                    if not all_eq:
+                        dataclass_s += '    ' + pascal2snake(k) + ': list\n'
+                    else:
+                        list_parse = True
+                        datac_name = snake2pascal(k + '_item')
 
-            if table.get(snake2pascal(k)):
-                dataclass_init += \
-    f"""\n        self.{pascal2snake(k)} = {snake2pascal(k)}(data.get('{pascal2snake(k)}'))"""
-            else:
-                dataclass_init += \
-    f"""\n        self.{pascal2snake(k)} = data.get('{pascal2snake(k)}')"""
+                        table.update(json2dataclass(datac_name, v[0]))
+
+                        dataclass_s += '    ' + pascal2snake(k) + f': List[{datac_name}]\n'
+                        dataclass_init += \
+            f"""\n        self.{pascal2snake(k)} = [{snake2pascal(k)}Item(i) for i in (data.get('{pascal2snake(k)}') if data.get('{pascal2snake(k)}') != None else [])]"""
+                else:
+                    if type(v[0]) == type(''):
+                        dataclass_s += '    ' + pascal2snake(k) + ': List[str]\n'
+                    elif type(v[0]) == type(0):
+                        dataclass_s += '    ' + pascal2snake(k) + ': List[int]\n'
+                    elif type(v[0]) == type(0.0):
+                        dataclass_s += '    ' + pascal2snake(k) + ': List[float]\n'
+                    elif type(v[0]) == type(True):
+                        dataclass_s += '    ' + pascal2snake(k) + ': List[bool]\n'
+                    elif type(v[0]) == type([]):
+                        dataclass_s += '    ' + pascal2snake(k) + ': List[list]\n'
+
+            if not list_parse:
+                if table.get(snake2pascal(k)):
+                    dataclass_init += \
+        f"""\n        self.{pascal2snake(k)} = {snake2pascal(k)}(data.get('{pascal2snake(k)}'))"""
+                else:
+                    dataclass_init += \
+        f"""\n        self.{pascal2snake(k)} = data.get('{pascal2snake(k)}')"""
 
     dataclass_s += '\n\n\n' + dataclass_init
     table[snake2pascal(name)] = dataclass_s
