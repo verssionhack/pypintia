@@ -13,8 +13,9 @@ def main():
     for arg in sys.argv[1:]:
         if ':' in arg:
             (path, name) = arg.split(':')
+            name = op.basename(name)
         else:
-            path, name = arg, arg.rsplit('.', 1)[0]
+            path, name = arg, op.basename(arg.rsplit('.', 1)[0])
         json = j.load(open(path, 'r'))
         dataclass_tb = json2dataclass(name, json)
 
