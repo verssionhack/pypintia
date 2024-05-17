@@ -82,6 +82,8 @@ f"""\n        pass"""
 
 
 def pascal2snake(value: str) -> str:
+    if value.isupper():
+        return value.lower()
     ret = ''
     for c in value:
         if 'A' <= c <= 'Z':
