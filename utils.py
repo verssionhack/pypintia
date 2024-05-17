@@ -29,6 +29,8 @@ f"""\n        pass"""
             elif type(v) == type([]):
                 if len(v) == 0:
                     dataclass_s += '    ' + pascal2snake(k) + ': list\n'
+                    dataclass_init += \
+        f"""\n        self.{pascal2snake(k)} = data.get('{pascal2snake(k)}')"""
                     continue
                 tp = type(v[0])
                 all_eq = True
